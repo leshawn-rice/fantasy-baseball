@@ -4,6 +4,24 @@ from classes.api import FantasyBaseballAPI
 from dotenv import load_dotenv
 
 
+def get_league_members(league, teams):
+    league_members = []
+    for member in league.get("members", list()):
+        first_name = member.get("firstName")
+        last_name = member.get("lastName")
+        name = f"{first_name} {last_name}"
+        username = member.get("displayName")
+        id = member.get("id")
+        team_id = [
+            team.get("id") for team in teams if team.get("primaryOwner") == id
+        ].pop()
+
+        league_members.append(
+            {"name": name, "username": username, "id": id, "team_id": team_id})
+
+    return league_members
+
+
 if __name__ == "__main__":
     load_dotenv()
 
@@ -16,14 +34,7 @@ if __name__ == "__main__":
         season=season, league_id=league_id, espn_s2=espn_s2, swid=swid)
 
     league = api.get_league()
+    teams = league.get("teams", list())
 
-    league_members = [
-        {
-            "name": f"{m.get('firstName')} {m.get('lastName')}",
-            "username": m.get("displayName"),
-            "id": m.get("id"),
-            "team_id": [x.get("id") for x in league.get("teams", list()) if x.get("primaryOwner") == m.get("id")].pop()
-        } for m in league.get("members", list())
-    ]
-
+    league_members = get_league_members(league, teams)
     print(league_members)
