@@ -15,7 +15,7 @@ CREATE TABLE scoring_periods (
 );
 
 -- Table: teams
--- Fantasy teams for the single league.
+-- Fantasy teams for the league.
 CREATE TABLE teams (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL,

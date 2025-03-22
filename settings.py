@@ -22,6 +22,8 @@ POSITION_MAP = {
     # 18, 21, 22 have appeared but unknown what position they correspond to
 }
 
+UTIL_POSITIONS = ['BE', 'IL', 'UTIL', '', 'P', 'CF', 'IF', 'RF', 'LF']
+
 PRO_TEAM_MAP = {
     0: 'FA',
     1: 'Bal',

@@ -7,7 +7,7 @@ VALID_VIEWS = [
     "mBoxscore",
     "mRoster",
     "mSettings",
-    "knoa_player_info",
+    "kona_player_info",
     "player_wl",
     "mSchedule",
     "mMatchup",
@@ -68,10 +68,20 @@ class FantasyBaseballAPI:
     def get_pro_players(self):
         """Gets the current sports professional players"""
         params = {
-            "view": "players_wl"
+            "view": ["players_wl", "kona_player_info"]
         }
         # This has no effect
         filters = {"filterActive": {"value": True}}
+        headers = {"x-fantasy-filter": json.dumps(filters)}
+        data = self.send_request(
+            endpoint="players", params=params, headers=headers)
+        return data
+
+    def get_player_info(self):
+        params = {
+            "view": "kona_player_info"
+        }
+        filters = {"player": {"value": True}}
         headers = {"x-fantasy-filter": json.dumps(filters)}
         data = self.send_request(
             endpoint="players", params=params, headers=headers)
