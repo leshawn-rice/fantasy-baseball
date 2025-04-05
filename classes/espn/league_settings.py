@@ -1,5 +1,5 @@
 from typing import Any
-from classes.espn.utilities import get_position, get_stat
+from utilities.espn import get_position, get_stat, convert_epoch_to_date
 
 
 class LeagueSettingsObject(object):
@@ -107,7 +107,6 @@ class LeagueAcquisitionSettings(LeagueSettingsObject):
             "matchupAcquisitionLimit")
         self.minimum_bid = self.read_data("minimumBid")
         self.waiver_hours = self.read_data("waiverHours")
-        self.is_waiver_order_reset = self.read_data("waiverOrderReset")
         self.waiver_process_days = self.read_data("waiverProcessDays")
         self.waiver_process_hour = self.read_data("waiverProcessHour")
         self.parse_boolean_data()
@@ -119,6 +118,7 @@ class LeagueAcquisitionSettings(LeagueSettingsObject):
             "matchupLimitPerScoringPeriod", False)
         self.is_using_acquisition_budget = self.read_data(
             "isUsingAcuisitionBudget", False)
+        self.is_waiver_order_reset = self.read_data("waiverOrderReset", False)
 
 
 class LeagueDraftSettings(LeagueSettingsObject):
@@ -135,9 +135,6 @@ class LeagueDraftSettings(LeagueSettingsObject):
 
     def parse_data(self):
         self.auction_budget = self.read_data("auctionBudget")
-        self.available_date = self.read_data("availableDate")
-        self.date = self.read_data("date")
-        self.is_trading_enabled = self.read_data("isTradingEnabled", False)
         self.keeper_count = self.read_data("keeperCount")
         self.keeper_count_future = self.read_data("keeperCountFuture")
         self.keeper_order_type = self.read_data("keeperOrderType")
@@ -146,6 +143,16 @@ class LeagueDraftSettings(LeagueSettingsObject):
         self.pick_order = self.read_data("pickOrder")
         self.time_per_selection = self.read_data("timePerSelection")
         self.type = self.read_data("type")
+        self.parse_boolean_data()
+        self.parse_date_data()
+
+    def parse_boolean_data(self):
+        self.is_trading_enabled = self.read_data("isTradingEnabled", False)
+
+    def parse_date_data(self):
+        self.available_date = convert_epoch_to_date(
+            self.read_data("availableDate"))
+        self.date = convert_epoch_to_date(self.read_data("date"))
 
 
 class LeagueRosterSettings(LeagueSettingsObject):
@@ -280,15 +287,19 @@ class LeagueTradeSettings(LeagueSettingsObject):
         super().__init__(data=data, parse_data=parse_data)
 
     def parse_data(self):
-        self.deadline_date = self.read_data("deadlineDate")
         self.max_trades = self.read_data("max")
         self.revision_hours = self.read_data("revisionHours")
         self.veto_votes_required = self.read_data("vetoVotesRequired")
+        self.parse_date_data()
         self.parse_boolean_data()
 
     def parse_boolean_data(self):
         self.allow_out_of_universe = self.read_data(
             "allowOutOfUniverse", False)
+
+    def parse_date_data(self):
+        self.deadline_date = convert_epoch_to_date(
+            self.read_data("deadlineDate", False))
 
 
 class LeagueSettings(LeagueSettingsObject):
@@ -310,9 +321,9 @@ class LeagueSettings(LeagueSettingsObject):
         Calls methods to parse acquisition, finance, draft, roster, schedule,
         scoring, and trade settings.
         """
-        self.league_name = self.read_data("name")
-        self.league_size = self.read_data("size")
-        self.league_restriction_type = self.read_data("restrictionType")
+        self.name = self.read_data("name")
+        self.size = self.read_data("size")
+        self.restriction_type = self.read_data("restrictionType")
         self.parse_boolean_data()
         self.parse_acquisition_data()
         self.parse_finance_data()
@@ -351,5 +362,5 @@ class LeagueSettings(LeagueSettingsObject):
         self.trade = LeagueTradeSettings(data=trade_data)
 
     def parse_boolean_data(self):
-        self.is_league_public = self.read_data("isPublic", False)
-        self.is_league_customizable = self.read_data("isCustomizable", False)
+        self.is_public = self.read_data("isPublic", False)
+        self.is_customizable = self.read_data("isCustomizable", False)

@@ -22,14 +22,9 @@ if __name__ == "__main__":
     )
 
     interface.setup_league()
-    l = interface.league
+    league_data = interface.league
 
-    league = League(data=l)
+    league = League(data=league_data)
     league.parse_league_data()
-
-    # print(league.settings.finance.entry_fee)
-    # print(league.settings.league_name)
-    # print(league.settings.draft.type)
-    print(league.settings.scoring.scoring_items)
 
     interface.database.end_session()

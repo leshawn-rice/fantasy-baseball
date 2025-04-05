@@ -1,4 +1,5 @@
 from classes.espn.base import Position, Stat
+from time import strftime, localtime
 from typing import Union
 
 
@@ -54,3 +55,21 @@ def get_stat(stat: Union[str, int] = None):
     if Stat(stat) == Stat.DEFAULT:
         return None
     return Stat(stat).shorthand
+
+
+def convert_epoch_to_date(epoch: Union[str, int] = None):
+    """
+    Converts an ESPN Epoch to a valid datetime
+    """
+
+    if epoch is None:
+        return None
+
+    if not isinstance(epoch, str):
+        try:
+            epoch = str(epoch)
+        except Exception:
+            return None
+    epoch = epoch[:10]
+    epoch = int(epoch)
+    return strftime('%Y-%m-%d %H:%M:%S', localtime(epoch))

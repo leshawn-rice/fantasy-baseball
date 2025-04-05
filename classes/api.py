@@ -57,6 +57,13 @@ class FantasyBaseballAPI:
         data = self.send_request(params=params)
         return data
 
+    def get_league_settings(self):
+        params = {
+            "view": "mSettings"
+        }
+        data = self.send_request(params=params)
+        return data
+
     def get_pro_schedule(self):
         """Gets the current sports professional team schedules"""
         params = {
