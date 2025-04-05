@@ -57,32 +57,6 @@ class Position(ESPNEnum):
 
     Each member represents a specific baseball position with an associated id,
     shorthand code, and descriptive label.
-
-    **Members:**
-
-    - **DEFAULT**: Default value used for missing or undefined positions.
-    - **CATCHER**: Catcher.
-    - **FIRST_BASE**: First Baseman.
-    - **SECOND_BASE**: Second Baseman.
-    - **THIRD_BASE**: Third Baseman.
-    - **SHORTSTOP**: Shortstop.
-    - **OUTFIELD**: Outfielder.
-    - **SECOND_BASE_SHORTSTOP**: Combined Second Baseman/Shortstop.
-    - **FIRST_BASE_THIRD_BASE**: Combined First Baseman/Third Baseman.
-    - **LEFT_FIELD**: Left Fielder.
-    - **CENTER_FIELD**: Center Fielder.
-    - **RIGHT_FIELD**: Right Fielder.
-    - **DESIGNATED_HITTER**: Designated Hitter.
-    - **UTILITY**: Utility player.
-    - **PITCHER**: Pitcher.
-    - **STARTING_PITCHER**: Starting Pitcher.
-    - **RELIEF_PITCHER**: Relief Pitcher.
-    - **BENCH**: Bench player.
-    - **INJURED_LIST**: Injured List.
-    - **UNKNOWN**: Unknown position.
-    - **INFIELDER**: Infielder (e.g., 1B/2B/SS/3B).
-    - **UNKNOWN_ALT**: Alternative unknown position.
-    - **DESIGNATED_HITTER_STARTING_PITCHER**: Combined Designated Hitter/Starting Pitcher.
     """
     DEFAULT = (-1, "_", "DEFAULT")
 
@@ -117,88 +91,6 @@ class Stat(ESPNEnum):
 
     Each member represents a specific baseball statistic with an associated id,
     shorthand code, and descriptive label.
-
-    **Members:**
-
-    - **DEFAULT**: Default value used for missing or undefined statistics.
-    - **AT_BATS**: At Bats.
-    - **HITS**: Hits.
-    - **BATTING_AVG**: Batting Average.
-    - **DOUBLES**: Doubles.
-    - **TRIPLES**: Triples.
-    - **HOME_RUNS**: Home Runs.
-    - **EXTRA_BASE_HITS**: Extra Base Hits.
-    - **SINGLES**: Singles.
-    - **TOTAL_BASES**: Total Bases.
-    - **SLUGGING_PERCENT**: Slugging Percentage.
-    - **WALKS**: Base on Balls (Walks).
-    - **INTENTIONAL_WALKS**: Intentional Walks.
-    - **HIT_BY_PITCH**: Hit By Pitch.
-    - **SACRIFICE_FLY**: Sacrifice Fly.
-    - **SACRIFICE_HIT**: Sacrifice Hit (Bunt).
-    - **SACRIFICES**: Total Sacrifices.
-    - **PLATE_APPEARANCES**: Plate Appearances.
-    - **ON_BASE_PERCENTAGE**: On Base Percentage.
-    - **ON_BASE_PLUS_SLUGGING**: On-base Plus Slugging.
-    - **RUNS_CREATED**: Runs Created.
-    - **RUNS**: Runs.
-    - **RUNS_BATTED_IN**: Runs Batted In.
-    - **STOLEN_BASES**: Stolen Bases.
-    - **CAUGHT_STEALING**: Caught Stealing.
-    - **NET_STEALS**: Net Steals (Steals minus Caught Stealing).
-    - **GROUNDED_DOUBLE_PLAY**: Grounded Into Double Play.
-    - **BATTER_STRIKE_OUTS**: Strikeouts (Batter).
-    - **PITCHES_SEEN**: Pitches Seen.
-    - **PITCHES_PER_APPEARANCE**: Pitches Per Appearance.
-    - **CYCLE**: Cycle.
-    - **GAMES_PITCHED**: Games Pitched.
-    - **GAMES_STARTED**: Games Started.
-    - **OUTS**: Outs Recorded.
-    - **TOTAL_BATTERS_FACED**: Total Batters Faced.
-    - **PITCHES**: Pitches.
-    - **HITS_ALLOWED**: Hits Allowed.
-    - **OPPONENT_BATTING_AVG**: Opponent Batting Average.
-    - **WALKS_ALLOWED**: Walks Allowed.
-    - **INTENTIONAL_WALKS_ALLOWED**: Intentional Walks Allowed.
-    - **WHIP**: Walks plus Hits per Inning Pitched.
-    - **PITCHER_HIT_BY_PITCH**: Hit By Pitch (Pitcher).
-    - **OPPONENT_ON_BASE_PERCENTAGE**: Opponent On-base Percentage.
-    - **RUNS_ALLOWED**: Runs Allowed.
-    - **EARNED_RUNS**: Earned Runs.
-    - **HOME_RUNS_ALLOWED**: Home Runs Allowed.
-    - **EARNED_RUN_AVERAGE**: Earned Run Average.
-    - **STRIKE_OUTS**: Strikeouts.
-    - **STEIKE_OUTS_PER_9_INNINGS**: Strikeouts per 9 Innings.
-    - **WILD_PITCHES**: Wild Pitches.
-    - **BLOCKED_PITCHES**: Blocked Pitches.
-    - **PICKOFFS**: Pickoffs.
-    - **WINS**: Wins.
-    - **LOSSES**: Losses.
-    - **WIN_PERCENTAGE**: Win Percentage.
-    - **SAVE_OPPORTUNITIES**: Save Opportunities.
-    - **SAVES**: Saves.
-    - **BLOWN_SAVES**: Blown Saves.
-    - **SAVE_PERCENTAGE**: Save Percentage.
-    - **HOLDS**: Holds.
-    - **COMPLETE_GAMES**: Complete Games.
-    - **QUALITY_STARTS**: Quality Starts.
-    - **NO_HITTER**: No-hitter.
-    - **PERFECT_GAME**: Perfect Game.
-    - **TOTAL_CHANCES**: Total Chances.
-    - **PUTOUTS**: Putouts.
-    - **ASSISTS**: Assists.
-    - **OUTFIELD_ASSISTS**: Outfield Assists.
-    - **FIELDING_PERCENTAGE**: Fielding Percentage.
-    - **ERRORS**: Errors.
-    - **DOUBLE_PLAYS_TURNED**: Double Plays Turned.
-    - **BATTER_GAMES_WON**: Batter Games Won.
-    - **BATTER_GAMES_LOST**: Batter Games Lost.
-    - **PITCHER_GAMES_WON**: Pitcher Games Won.
-    - **PITCHER_GAMES_LOST**: Pitcher Games Lost.
-    - **GAMES_PLAYED**: Games Played.
-    - **STRIKEOUTS_PER_WALK**: Strikeout-to-Walk Ratio.
-    - **SAVES_AND_HOLDS**: Saves + Holds.
-    - **STARTER**: Starter.
     """
     DEFAULT = (-1, "DEF", "DEFAULT")
 
