@@ -2,6 +2,7 @@ import os
 import datetime
 from classes.interface import FantasyBaseballInterface
 from dotenv import load_dotenv
+from classes.espn.league import League
 
 if __name__ == "__main__":
     load_dotenv()
@@ -21,14 +22,14 @@ if __name__ == "__main__":
     )
 
     interface.setup_league()
-    interface.write_league_teams_db()
-    interface.write_league_members_db()
-    interface.write_rosters_db()
-    interface.write_draft_db()
-    interface.write_matchups_db()
-    interface.write_standings_db()
-    interface.write_pro_schedule_db()
-    interface.write_players_db()
-    # interface.write_player_cards_db()
-    # interface.write_player_stats_db()
+    l = interface.league
+
+    league = League(data=l)
+    league.parse_league_data()
+
+    # print(league.settings.finance.entry_fee)
+    # print(league.settings.league_name)
+    # print(league.settings.draft.type)
+    print(league.settings.scoring.scoring_items)
+
     interface.database.end_session()

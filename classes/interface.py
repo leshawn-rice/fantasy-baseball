@@ -27,14 +27,14 @@ class FantasyBaseballInterface:
     def setup_league(self):
         # Fetch and set up all league-wide info.
         self.league = self.api.get_league()
-        self.league_teams = self.league.get("teams", [])
-        self.league_members = self.get_league_members()
-        self.rosters = self.setup_rosters()
-        self.draft = self.setup_draft()
-        self.matchups = self.setup_matchups()
-        self.standings = self.setup_standings()
-        self.pro_schedule = self.setup_pro_schedule()
-        self.players = self.setup_players()
+        # self.league_teams = self.league.get("teams", [])
+        # self.league_members = self.get_league_members()
+        # self.rosters = self.setup_rosters()
+        # self.draft = self.setup_draft()
+        # self.matchups = self.setup_matchups()
+        # self.standings = self.setup_standings()
+        # self.pro_schedule = self.setup_pro_schedule()
+        # self.players = self.setup_players()
         # self.player_cards = self.setup_player_cards()
         # self.player_stats = self.setup_player_stats([])
 

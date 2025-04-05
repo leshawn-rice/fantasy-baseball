@@ -87,6 +87,16 @@ class FantasyBaseballAPI:
             endpoint="players", params=params, headers=headers)
         return data
 
+    def get_player_info_by_id(self):
+        params = {
+            "view": "kona_player_info"
+        }
+        filters = {"player": {"value": True}}
+        headers = {"x-fantasy-filter": json.dumps(filters)}
+        data = self.send_request(
+            endpoint="players", params=params, headers=headers)
+        return data
+
     def get_league_draft(self):
         """Gets the leagues draft"""
         params = {
