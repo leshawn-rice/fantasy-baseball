@@ -1,5 +1,7 @@
 from classes.database import DatabaseEngine
 from classes.api import FantasyBaseballAPI
+from classes.espn.league import League
+from classes.espn.base import Stat, Position
 from settings import PRO_TEAM_MAP, POSITION_MAP, UTIL_POSITIONS
 
 
@@ -23,6 +25,20 @@ class FantasyBaseballInterface:
             connection_string=self.db_connection_string
         )
         self.database.start_session()
+
+    def create_league(self):
+        league_data = self.api.get_league()
+        league = League(data=league_data)
+        league.parse_league_data()
+        import json
+        with open("league_info.json", "w") as outfile:
+            outfile.write(json.dumps(league_data, indent=2))
+        Stat.write_all_to_database(self.database)
+        Position.write_all_to_database(self.database)
+        league.write_to_database(self.database)
+
+    def update_league(self):
+        pass
 
     def setup_league(self):
         # Fetch and set up all league-wide info.

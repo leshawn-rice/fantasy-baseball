@@ -21,10 +21,5 @@ if __name__ == "__main__":
         db_connection_string=db_connection_string
     )
 
-    interface.setup_league()
-    league_data = interface.league
-
-    league = League(data=league_data)
-    league.parse_league_data()
-
+    interface.create_league()
     interface.database.end_session()

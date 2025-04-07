@@ -1,7 +1,103 @@
 from enum import Enum
+from classes.database import DatabaseEngine
 
 
-class ESPNEnum(Enum):
+class ESPNObject:
+    database_table: str = None
+
+    def serialize_for_db(self):
+        serialized_object = {}
+        for key, val in self.__dict__.items():
+            if key.startswith("_"):
+                continue
+            if isinstance(val, ESPNObject):
+                continue
+            elif isinstance(val, (list, set)):
+                val = [
+                    item for item in val if not isinstance(item, ESPNObject)]
+            elif isinstance(val, dict):
+                val = {
+                    k: v for k, v in val.items() if not isinstance(v, ESPNObject)
+                }
+            if isinstance(val, (list, set, dict)) and not len(val):
+                continue
+            serialized_object[key] = val
+        return serialized_object
+
+    def serialize(self):
+        serialized_object = {}
+        for key, val in self.__dict__.items():
+            if key.startswith("_"):
+                continue
+            serialized_object[key] = val
+        return serialized_object
+
+    def read_database_id(self, engine: DatabaseEngine, table: str = None, data: dict = None):
+        if engine is None:
+            return None
+
+        if data.get("id", None) is not None:
+            return data.get("id")
+        try:
+            item = engine.get_by_column_value_multiple(
+                table_name=table, filter_dict=data
+            )
+            return item.id
+        except Exception as exc:
+            print(exc)
+
+    def write_to_database(self, engine: DatabaseEngine, table: str = None):
+        if engine is None:
+            return None
+
+        data = self.serialize()
+
+        items_to_write_to_db = []
+
+        # Process nested ESPNObject instances
+        for key, val in list(data.items()):
+            if isinstance(val, ESPNObject):
+                items_to_write_to_db.append(val)
+                del data[key]
+            elif isinstance(val, (list, set)):
+                for item in list(val):
+                    if isinstance(item, ESPNObject):
+                        items_to_write_to_db.append(item)
+                        data[key].remove(item)
+                if not data[key]:
+                    del data[key]
+            elif isinstance(val, dict):
+                for subkey, subval in list(val.items()):
+                    if isinstance(subval, ESPNObject):
+                        items_to_write_to_db.append(subval)
+                        del data[key][subkey]
+                if not data[key]:
+                    del data[key]
+
+        # Insert this object's data into the database using the provided engine.
+        # Here, we're assuming that 'engine' has an 'insert' method that takes
+        # a table name and a dictionary of column data.
+        table = self.database_table if table is None else table
+        if hasattr(engine, "insert") and table is not None:
+            try:
+                engine.insert(table, data)
+            except Exception as exc:
+                print(
+                    f"{self.__class__.__name__} failed to insert into {table} with values {data}\n{exc}\n\n")
+        else:
+            if table is None:
+                print(f"Invalid Table {table}")
+            else:
+                print("Engine does not support an 'insert' operation")
+
+        if not hasattr(self, "id"):
+            self.id = self.read_database_id(engine, table, data)
+
+        for item in items_to_write_to_db:
+            item.write_to_database(engine)
+
+
+class ESPNEnum(ESPNObject, Enum):
     """
     Base enumeration class for ESPN-related constants.
 
@@ -50,6 +146,17 @@ class ESPNEnum(Enum):
         print(f"Warning: {value} is not a valid {cls.__name__}.")
         return cls.DEFAULT
 
+    @classmethod
+    def write_all_to_database(cls, engine):
+        table = None
+
+        if cls is Stat:
+            table = "stats"
+        if cls is Position:
+            table = "positions"
+        for member in cls:
+            member.write_to_database(engine, table)
+
 
 class Position(ESPNEnum):
     """
@@ -86,6 +193,7 @@ class Position(ESPNEnum):
 
 
 class Stat(ESPNEnum):
+    # database_table = "stats"
     """
     Enumeration representing baseball statistics.
 

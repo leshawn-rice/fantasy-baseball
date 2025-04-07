@@ -1,6 +1,10 @@
-class LeagueDivision:
+from classes.espn.base import ESPNObject
+
+
+class LeagueDivision(ESPNObject):
+    database_table = "divisions"
+
     def __init__(self, data: dict):
-        self.data = data
         self.id = data.get("id", None)
         self.name = data.get("name", None)
         self.size = data.get("size", None)

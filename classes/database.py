@@ -1,6 +1,6 @@
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, insert, select, update
+from sqlalchemy import create_engine, insert, select, update, and_
 from typing import Any
 
 
@@ -186,4 +186,35 @@ class DatabaseEngine(object):
         table = self.get_table(name=table_name)
         column = table.__table__.c[column_name]
         result = self.session.query(table).filter(column == column_value).all()
+        return result
+
+    def get_by_column_value_multiple(self, table_name: str = None, filter_dict: dict = None):
+        """
+        Retrieve all records from the specified table where the columns match the given filter dictionary.
+
+        Args:
+            table_name (str): The name of the table to query.
+            filter_dict (dict): A dictionary mapping column names to filter values.
+
+        Raises:
+            ValueError: If table_name or filter_dict is not provided.
+
+        Returns:
+            list: A list of records that match the filters.
+        """
+        if table_name is None:
+            raise ValueError("Table name must be provided.")
+        if not filter_dict:
+            raise ValueError("A filter dictionary must be provided.")
+
+        # Retrieve the table using your existing method.
+        table = self.get_table(name=table_name)
+
+        # Create a list of conditions for each column in the filter dictionary.
+        conditions = [table.__table__.c[col_name] ==
+                      value for col_name, value in filter_dict.items()]
+
+        # Query the table filtering on all conditions. You can use *conditions to unpack the list.
+        result = self.session.query(table).filter(*conditions).one()
+
         return result

@@ -56,7 +56,7 @@ CREATE TABLE settings_finance (
   per_trade FLOAT DEFAULT 0.0,
   player_acquisition FLOAT DEFAULT 0.0,
   player_drop FLOAT DEFAULT 0.0,
-  player_mover_to_active FLOAT DEFAULT 0.0,
+  player_move_to_active FLOAT DEFAULT 0.0,
   player_move_to_ir FLOAT DEFAULT 0.0
 );
 
@@ -117,7 +117,7 @@ CREATE TABLE settings_draft (
 CREATE TABLE settings_draft_pick_order (
   id SERIAL PRIMARY KEY,
   settings_draft_id INTEGER REFERENCES settings_draft(id) ON DELETE CASCADE,
-  team_id INTEGER REFERENCES teams(id) ON DELETE CASCADE,
+  -- team_id INTEGER REFERENCES teams(id) ON DELETE CASCADE,
   position INTEGER NOT NULL
 );
 

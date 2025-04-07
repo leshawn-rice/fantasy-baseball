@@ -1,8 +1,9 @@
 from typing import Any
 from utilities.espn import get_position, get_stat, convert_epoch_to_date
+from classes.espn.base import ESPNObject
 
 
-class LeagueSettingsObject(object):
+class LeagueSettingsObject(ESPNObject):
     """
     Base class for league settings objects.
 
@@ -20,7 +21,7 @@ class LeagueSettingsObject(object):
         :param parse_data: If True, automatically parse the data by calling :meth:`parse_data`.
         :type parse_data: bool, optional
         """
-        self.data = data
+        self._data = data
         if parse_data:
             self.parse_data()
 
@@ -41,7 +42,7 @@ class LeagueSettingsObject(object):
         return_val = default_val if default_val is not None else self.default_read_value
         if not key:
             return return_val
-        return self.data.get(key, return_val)
+        return self._data.get(key, return_val)
 
     def parse_data(self):
         """
@@ -64,6 +65,7 @@ class LeagueSettingsObject(object):
 
 
 class LeagueFinanceSettings(LeagueSettingsObject):
+    database_table = "settings_finance"
     """
     Class representing league finance settings.
 
@@ -86,6 +88,7 @@ class LeagueFinanceSettings(LeagueSettingsObject):
 
 
 class LeagueAcquisitionSettings(LeagueSettingsObject):
+    database_table = "settings_acquisition"
     """
     Class representing league acquisition settings.
 
@@ -121,7 +124,25 @@ class LeagueAcquisitionSettings(LeagueSettingsObject):
         self.is_waiver_order_reset = self.read_data("waiverOrderReset", False)
 
 
+class LeagueDraftPickOrderSetting(LeagueSettingsObject):
+    database_table = "settings_draft_pick_order"
+    default_read_value = None
+
+    def __init__(self, team_id: int = None, position: int = None, draft_settings: Any = None):
+        self.position = position
+        # self.team_id = team_id
+        self.draft_settings = draft_settings
+
+    def write_to_database(self, engine, table=None):
+        if not hasattr(self, "draft_id"):
+            self.settings_draft_id = self.draft_settings.read_database_id(
+                engine=engine, table=table, data=self.draft_settings.serialize_for_db())
+        return super().write_to_database(engine, table)
+
+
 class LeagueDraftSettings(LeagueSettingsObject):
+    database_table = "settings_draft"
+
     """
     Class representing league draft settings.
 
@@ -140,7 +161,9 @@ class LeagueDraftSettings(LeagueSettingsObject):
         self.keeper_order_type = self.read_data("keeperOrderType")
         self.league_sub_type = self.read_data("leagueSubType")
         self.order_type = self.read_data("orderType")
-        self.pick_order = self.read_data("pickOrder")
+        self.pick_order = [
+            LeagueDraftPickOrderSetting(id, pos, draft_settings=self) for pos, id in enumerate(self.read_data("pickOrder", list()))
+        ]
         self.time_per_selection = self.read_data("timePerSelection")
         self.type = self.read_data("type")
         self.parse_boolean_data()
@@ -156,6 +179,8 @@ class LeagueDraftSettings(LeagueSettingsObject):
 
 
 class LeagueRosterSettings(LeagueSettingsObject):
+    database_table = "settings_roster"
+
     """
     Class representing league roster settings.
 
@@ -195,6 +220,8 @@ class LeagueRosterSettings(LeagueSettingsObject):
 
 
 class LeagueScheduleSettings(LeagueSettingsObject):
+    database_table = "settings_schedule"
+
     """
     Class representing league schedule settings.
 
@@ -232,6 +259,8 @@ class LeagueScheduleSettings(LeagueSettingsObject):
 
 
 class LeagueScoringSettings(LeagueSettingsObject):
+    database_table = "settings_scoring"
+
     """
     Class representing league scoring settings.
 
@@ -275,6 +304,8 @@ class LeagueScoringSettings(LeagueSettingsObject):
 
 
 class LeagueTradeSettings(LeagueSettingsObject):
+    database_table = "settings_trade"
+
     """
     Class representing league trade settings.
 
@@ -303,6 +334,8 @@ class LeagueTradeSettings(LeagueSettingsObject):
 
 
 class LeagueSettings(LeagueSettingsObject):
+    database_table = "settings"
+
     """
     Class representing overall league settings.
 
