@@ -134,9 +134,12 @@ class LeagueDraftPickOrderSetting(LeagueSettingsObject):
         self.draft_settings = draft_settings
 
     def write_to_database(self, engine, table=None):
-        if not hasattr(self, "draft_id"):
+        if not hasattr(self, "settings_draft_id"):
             self.settings_draft_id = self.draft_settings.read_database_id(
-                engine=engine, table=table, data=self.draft_settings.serialize_for_db())
+                engine=engine,
+                table=table,
+                data=self.draft_settings.serialize_for_db()
+            )
         return super().write_to_database(engine, table)
 
 

@@ -6,10 +6,8 @@ class ESPNObject:
     database_table: str = None
 
     def serialize_for_db(self):
-        serialized_object = {}
-        for key, val in self.__dict__.items():
-            if key.startswith("_"):
-                continue
+        db_serialized_object = {}
+        for key, val in self.serialize().items():
             if isinstance(val, ESPNObject):
                 continue
             elif isinstance(val, (list, set)):
@@ -21,8 +19,8 @@ class ESPNObject:
                 }
             if isinstance(val, (list, set, dict)) and not len(val):
                 continue
-            serialized_object[key] = val
-        return serialized_object
+            db_serialized_object[key] = val
+        return db_serialized_object
 
     def serialize(self):
         serialized_object = {}
