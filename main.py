@@ -2,7 +2,6 @@ import os
 import datetime
 from classes.interface import FantasyBaseballInterface
 from dotenv import load_dotenv
-from classes.espn.league import League
 
 if __name__ == "__main__":
     load_dotenv()

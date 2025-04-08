@@ -1,9 +1,9 @@
 from typing import Any
 from utilities.espn import get_position, get_stat, convert_epoch_to_date
-from classes.espn.base import ESPNObject
+from classes.espn.base import ESPNObject, Position, Stat
 
 
-class LeagueSettingsObject(ESPNObject):
+class SettingsObject(ESPNObject):
     """
     Base class for league settings objects.
 
@@ -14,7 +14,7 @@ class LeagueSettingsObject(ESPNObject):
 
     def __init__(self, data: dict = None, parse_data: bool = True):
         """
-        Initialize a new LeagueSettingsObject instance.
+        Initialize a new SettingsObject instance.
 
         :param data: Dictionary containing configuration data.
         :type data: dict, optional
@@ -24,6 +24,28 @@ class LeagueSettingsObject(ESPNObject):
         self._data = data
         if parse_data:
             self.parse_data()
+
+    def set_parent_id(self, engine, attribute: str = None):
+        if not hasattr(self, "_parent"):
+            print(
+                f"WARNING: {self.__class__.__name__} has no attribute '_parent'!")
+        if not hasattr(self, f"{attribute}"):
+            self.__dict__[attribute] = self._parent.read_database_id(
+                engine=engine,
+                table=self._parent._database_table,
+                data=self._parent.serialize_for_db()
+            )
+
+    def set_child_id(self, engine, attribute: str = None, child=None):
+        if child is None:
+            print(
+                f"WARNING: No child to read {attribute} for {self.__class__.__name__}")
+        if not hasattr(self, f"{attribute}"):
+            self.__dict__[attribute] = child.read_database_id(
+                engine=engine,
+                table=child._database_table,
+                data=child.serialize_for_db()
+            )
 
     def read_data(self, key: str = None, default_val: Any = None):
         """
@@ -64,8 +86,16 @@ class LeagueSettingsObject(ESPNObject):
         return f"'{self.__class__.__name__}': {{{attrs}}}"
 
 
-class LeagueFinanceSettings(LeagueSettingsObject):
-    database_table = "settings_finance"
+class SettingsObjectValue(SettingsObject):
+    _parent_id_attr = "settings_id"
+
+    def write_to_database(self, engine, table=None, ignore_children=False):
+        self.set_parent_id(engine, self._parent_id_attr)
+        super().write_to_database(engine, table)
+
+
+class FinanceSettings(SettingsObject):
+    _database_table = "settings_finance"
     """
     Class representing league finance settings.
 
@@ -87,15 +117,23 @@ class LeagueFinanceSettings(LeagueSettingsObject):
         self.player_move_to_ir = self.read_data("playerMoveToIR")
 
 
-class LeagueAcquisitionSettings(LeagueSettingsObject):
-    database_table = "settings_acquisition"
+class AcquisitionSettingsWaiverProcessDays(SettingsObjectValue):
+    _database_table = "settings_acquisition_waiver_process_days"
+    _parent_id_attr = "settings_acquisition_id"
+
+    def __init__(self, day: str = None, acquisition_settings: Any = None):
+        self.day = day
+        self._parent = acquisition_settings
+
+
+class AcquisitionSettings(SettingsObject):
+    _database_table = "settings_acquisition"
     """
     Class representing league acquisition settings.
 
     Parses settings related to player acquisitions including budgets, limits, waiver rules,
     and transaction locking.
     """
-    default_read_value = None
 
     def __init__(self, data: dict = None, parse_data: bool = True):
         super().__init__(data=data, parse_data=parse_data)
@@ -106,11 +144,13 @@ class LeagueAcquisitionSettings(LeagueSettingsObject):
         self.acquisition_type = self.read_data("acquisitionType")
         self.final_place_transaction_eligible = self.read_data(
             "finalPlaceTransactionEligible")
-        self.matchup_acquisition_limt = self.read_data(
+        self.matchup_acquisition_limit = self.read_data(
             "matchupAcquisitionLimit")
         self.minimum_bid = self.read_data("minimumBid")
         self.waiver_hours = self.read_data("waiverHours")
-        self.waiver_process_days = self.read_data("waiverProcessDays")
+        self.waiver_process_days = [
+            AcquisitionSettingsWaiverProcessDays(day, acquisition_settings=self) for day in self.read_data("waiverProcessDays", list())
+        ]
         self.waiver_process_hour = self.read_data("waiverProcessHour")
         self.parse_boolean_data()
 
@@ -124,27 +164,18 @@ class LeagueAcquisitionSettings(LeagueSettingsObject):
         self.is_waiver_order_reset = self.read_data("waiverOrderReset", False)
 
 
-class LeagueDraftPickOrderSetting(LeagueSettingsObject):
-    database_table = "settings_draft_pick_order"
-    default_read_value = None
+class DraftSettingsPickOrder(SettingsObjectValue):
+    _database_table = "settings_draft_pick_order"
+    _parent_id_attr = "settings_draft_id"
 
     def __init__(self, team_id: int = None, position: int = None, draft_settings: Any = None):
         self.position = position
         # self.team_id = team_id
-        self.draft_settings = draft_settings
-
-    def write_to_database(self, engine, table=None):
-        if not hasattr(self, "settings_draft_id"):
-            self.settings_draft_id = self.draft_settings.read_database_id(
-                engine=engine,
-                table=table,
-                data=self.draft_settings.serialize_for_db()
-            )
-        return super().write_to_database(engine, table)
+        self._parent = draft_settings
 
 
-class LeagueDraftSettings(LeagueSettingsObject):
-    database_table = "settings_draft"
+class DraftSettings(SettingsObject):
+    _database_table = "settings_draft"
 
     """
     Class representing league draft settings.
@@ -152,7 +183,6 @@ class LeagueDraftSettings(LeagueSettingsObject):
     Parses draft configuration settings such as auction budgets, draft dates,
     keeper counts, and order types.
     """
-    default_read_value = None
 
     def __init__(self, data: dict = None, parse_data: bool = True):
         super().__init__(data=data, parse_data=parse_data)
@@ -165,7 +195,7 @@ class LeagueDraftSettings(LeagueSettingsObject):
         self.league_sub_type = self.read_data("leagueSubType")
         self.order_type = self.read_data("orderType")
         self.pick_order = [
-            LeagueDraftPickOrderSetting(id, pos, draft_settings=self) for pos, id in enumerate(self.read_data("pickOrder", list()))
+            DraftSettingsPickOrder(id, pos, draft_settings=self) for pos, id in enumerate(self.read_data("pickOrder", list()))
         ]
         self.time_per_selection = self.read_data("timePerSelection")
         self.type = self.read_data("type")
@@ -181,8 +211,48 @@ class LeagueDraftSettings(LeagueSettingsObject):
         self.date = convert_epoch_to_date(self.read_data("date"))
 
 
-class LeagueRosterSettings(LeagueSettingsObject):
-    database_table = "settings_roster"
+class RosterSettingsLineupSlotCounts(SettingsObjectValue):
+    _database_table = "settings_roster_lineup_slot_counts"
+    _parent_id_attr = "settings_roster_id"
+
+    def __init__(self, position: Position = None, slot_count: int = 0, roster_settings: Any = None):
+        self.position_id = position.id
+        self.slot_count = slot_count
+        self._parent = roster_settings
+
+
+class RosterSettingsPositionLimits(SettingsObjectValue):
+    _database_table = "settings_roster_position_limits"
+    _parent_id_attr = "settings_roster_id"
+
+    def __init__(self, position: Position = None, position_limit: int = 0, roster_settings: Any = None):
+        self.position_id = position.id
+        self.position_limit = position_limit
+        self._parent = roster_settings
+
+
+class RosterSettingsLineupSlotStatLimits(SettingsObjectValue):
+    _database_table = "settings_roster_lineup_slot_stat_limits"
+    _parent_id_attr = "settings_roster_id"
+
+    def __init__(self, position: Position = None, stat: Stat = None, stat_limit: int = 0, roster_settings: Any = None):
+        self.position_id = position.id
+        self.stat_id = stat.id
+        self.stat_limit = stat_limit
+        self._parent = roster_settings
+
+
+class RosterSettingsUniverseIds(SettingsObjectValue):
+    _database_table = "settings_roster_universe_ids"
+    _parent_id_attr = "settings_roster_id"
+
+    def __init__(self, universe_id: int = 0, roster_settings: Any = None):
+        self.universe_id = universe_id
+        self._parent = roster_settings
+
+
+class RosterSettings(SettingsObject):
+    _database_table = "settings_roster"
 
     """
     Class representing league roster settings.
@@ -190,7 +260,6 @@ class LeagueRosterSettings(LeagueSettingsObject):
     Parses settings related to lineup lock times, move limits, roster limits, and associated
     position and slot configurations.
     """
-    default_read_value = None
 
     def __init__(self, data: dict = None, parse_data: bool = True):
         super().__init__(data=data, parse_data=parse_data)
@@ -199,21 +268,41 @@ class LeagueRosterSettings(LeagueSettingsObject):
         self.lineup_locktime_type = self.read_data("lineupLocktimeType")
         self.move_limit = self.read_data("moveLimit")
         self.roster_locktime_type = self.read_data("rosterLocktimeType")
-        self.universe_ids = self.read_data("universeIds", list())
+        self.universe_ids = [
+            RosterSettingsUniverseIds(
+                universe_id=id,
+                roster_settings=self
+            ) for id in self.read_data("universeIds", list())
+        ]
         self.parse_boolean_data()
         self.parse_dict_data()
 
     def parse_dict_data(self):
+        self.lineup_slot_counts = set()
+
         self.lineup_slot_counts = {
-            get_position(k): v for k, v in self.read_data("lineupSlotCounts", dict()).items()
+            RosterSettingsLineupSlotCounts(
+                position=get_position(k),
+                slot_count=v,
+                roster_settings=self
+            ) for k, v in self.read_data("lineupSlotCounts", dict()).items()
         }
+
         self.position_limits = {
-            get_position(k): v for k, v in self.read_data("positionLimits", dict()).items()
+            RosterSettingsPositionLimits(
+                position=get_position(k),
+                position_limit=v,
+                roster_settings=self
+            ) for k, v in self.read_data("positionLimits", dict()).items()
         }
+
         self.lineup_slot_stat_limits = {
-            get_position(k): {
-                "stat": get_stat(v.get("statId")), "limit_value": v.get("limitValue")
-            } for k, v in self.read_data("lineupSlotStatLimits", dict()).items()
+            RosterSettingsLineupSlotStatLimits(
+                position=get_position(k),
+                stat=get_stat(v.get("statId")),
+                stat_limit=v.get("limitValue"),
+                roster_settings=self
+            ) for k, v in self.read_data("lineupSlotStatLimits", dict()).items()
         }
 
     def parse_boolean_data(self):
@@ -222,15 +311,34 @@ class LeagueRosterSettings(LeagueSettingsObject):
             "isUsingUndroppableList", False)
 
 
-class LeagueScheduleSettings(LeagueSettingsObject):
-    database_table = "settings_schedule"
+class ScheduleSettingsMatchupPeriods(SettingsObjectValue):
+    _database_table = "settings_schedule_matchup_periods"
+    _parent_id_attr = "settings_schedule_id"
+
+    def __init__(self, matchup_id: int = 0, period_id: int = 0, schedule_settings: Any = None):
+        self.matchup_id = matchup_id
+        self.period_id = period_id
+        self._parent = schedule_settings
+
+
+class ScheduleSettingsDivisions(SettingsObjectValue):
+    _database_table = "settings_schedule_divisions"
+    _parent_id_attr = "settings_schedule_id"
+
+    def __init__(self, data: dict = None, schedule_settings: Any = None):
+        self._data = data
+        self.division_id = data.get("id", None)
+        self._parent = schedule_settings
+
+
+class ScheduleSettings(SettingsObject):
+    _database_table = "settings_schedule"
 
     """
     Class representing league schedule settings.
 
     Parses scheduling details including matchup periods, playoff configurations, and divisions.
     """
-    default_read_value = None
 
     def __init__(self, data: dict = None, parse_data: bool = True):
         super().__init__(data=data, parse_data=parse_data)
@@ -245,14 +353,23 @@ class LeagueScheduleSettings(LeagueSettingsObject):
         self.playoff_seeding_rule = self.read_data("playoffSeedingRule")
         self.playoff_seeding_rule_by = self.read_data("playoffSeedingRuleBy")
         self.playoff_team_count = self.read_data("playoffTeamCount")
-        self.divisions = self.read_data("divisions")
+        self.divisions = {
+            ScheduleSettingsDivisions(
+                data=div,
+                schedule_settings=self
+            ) for div in self.read_data("divisions", list())
+        }
         self.parse_boolean_data()
         self.parse_dict_data()
 
     def parse_dict_data(self):
         # dict where the keyn is the matchup ID and the value is a list of period IDs i.e. matchup 19 is weeks 19+20
         self.matchup_periods = {
-            int(k): list(v) for k, v in self.read_data("matchupPeriods", dict()).items()
+            ScheduleSettingsMatchupPeriods(
+                matchup_id=int(k),
+                period_id=int(p),
+                schedule_settings=self
+            ) for k, v in self.read_data("matchupPeriods", dict()).items() for p in list(v)
         }
 
     def parse_boolean_data(self):
@@ -261,8 +378,39 @@ class LeagueScheduleSettings(LeagueSettingsObject):
             "variablePlayoffMatchupPeriodLength", False)
 
 
-class LeagueScoringSettings(LeagueSettingsObject):
-    database_table = "settings_scoring"
+class ScoringSettingsItemsPointOverrides(SettingsObjectValue):
+    _database_table = "settings_scoring_items_point_overrides"
+    _parent_id_attr = "settings_scoring_item_id"
+
+    def __init__(self, key: str = None, value: float = None, scoring_settings_item: Any = None):
+        self.key = key
+        self.value = value
+        self._parent = scoring_settings_item
+
+
+class ScoringSettingsItems(SettingsObjectValue):
+    _database_table = "settings_scoring_items"
+    _parent_id_attr = "settings_scoring_id"
+
+    def __init__(self, is_reverse_item: bool = False, league_ranking: float = 0.0, league_total: float = 0.0, points: float = 0.0,
+                 stat:  Stat = None, point_overrides: dict = None, scoring_settings: Any = None):
+        self.is_reverse_item = is_reverse_item
+        self.league_ranking = league_ranking
+        self.league_total = league_total
+        self.points = points
+        self.stat_id = stat.id
+        self.point_overrides = {
+            ScoringSettingsItemsPointOverrides(
+                key=k,
+                value=v,
+                scoring_settings_item=self
+            ) for k, v in point_overrides.items()
+        }
+        self._parent = scoring_settings
+
+
+class ScoringSettings(SettingsObject):
+    _database_table = "settings_scoring"
 
     """
     Class representing league scoring settings.
@@ -270,7 +418,6 @@ class LeagueScoringSettings(LeagueSettingsObject):
     Parses scoring configurations including scoring type, bonus rules, tie-breakers,
     and individual scoring items.
     """
-    default_read_value = None
 
     def __init__(self, data: dict = None, parse_data: bool = True):
         super().__init__(data=data, parse_data=parse_data)
@@ -290,24 +437,25 @@ class LeagueScoringSettings(LeagueSettingsObject):
         self.parse_dict_data()
 
     def parse_dict_data(self):
-        self.scoring_items = [
-            {
-                "stat": get_stat(item.get("statId")),
-                "points": item.get("points"),
-                "is_reverse_item": item.get("isReverseItem", False),
-                "league_ranking": item.get("leagueRanking", 0.0),
-                "league_total": item.get("leagueTotal", 0.0),
-                "points_overrides": item.get("pointsOverrides", dict())
-            } for item in self.read_data("scoringItems", list())
-        ]
+        self.scoring_items = {
+            ScoringSettingsItems(
+                is_reverse_item=item.get("isReverseItem", False),
+                stat=get_stat(item.get("statId")),
+                points=item.get("points"),
+                league_ranking=item.get("leagueRanking", 0.0),
+                league_total=item.get("leagueTotal", 0.0),
+                point_overrides=item.get("pointsOverrides", dict()),
+                scoring_settings=self
+            ) for item in self.read_data("scoringItems", list())
+        }
 
     def parse_boolean_data(self):
         self.allow_out_of_position_scoring = self.read_data(
             "allowOutOfPositionScoring", False)
 
 
-class LeagueTradeSettings(LeagueSettingsObject):
-    database_table = "settings_trade"
+class TradeSettings(SettingsObject):
+    _database_table = "settings_trade"
 
     """
     Class representing league trade settings.
@@ -315,7 +463,6 @@ class LeagueTradeSettings(LeagueSettingsObject):
     Parses trade-related settings including deadlines, maximum trades,
     revision hours, and veto vote requirements.
     """
-    default_read_value = None
 
     def __init__(self, data: dict = None, parse_data: bool = True):
         super().__init__(data=data, parse_data=parse_data)
@@ -336,8 +483,8 @@ class LeagueTradeSettings(LeagueSettingsObject):
             self.read_data("deadlineDate", False))
 
 
-class LeagueSettings(LeagueSettingsObject):
-    database_table = "settings"
+class Settings(SettingsObject):
+    _database_table = "settings"
 
     """
     Class representing overall league settings.
@@ -345,10 +492,31 @@ class LeagueSettings(LeagueSettingsObject):
     Aggregates various league configuration settings including league information,
     acquisition, finance, draft, roster, schedule, scoring, and trade settings.
     """
-    default_read_value = None
 
     def __init__(self, data: dict = None, parse_data: bool = True):
         super().__init__(data=data, parse_data=parse_data)
+
+    def write_to_database(self, engine, table=None, ignore_children=False):
+        # Not the cleanest way to do this but we can fix it later (famous last words)
+        #
+        super().write_to_database(engine, table)
+
+        if not hasattr(self, "finance_id"):
+            self.set_child_id(engine, "finance_id", self.finance)
+        if not hasattr(self, "trade_id"):
+            self.set_child_id(engine, "trade_id", self.trade)
+        if not hasattr(self, "scoring_id"):
+            self.set_child_id(engine, "scoring_id", self.scoring)
+        if not hasattr(self, "schedule_id"):
+            self.set_child_id(engine, "schedule_id", self.schedule)
+        if not hasattr(self, "roster_id"):
+            self.set_child_id(engine, "roster_id", self.roster)
+        if not hasattr(self, "draft_id"):
+            self.set_child_id(engine, "draft_id", self.draft)
+        if not hasattr(self, "acquisition_id"):
+            self.set_child_id(engine, "acquisition_id", self.acquisition)
+
+        super().write_to_database(engine, table, ignore_children=True)
 
     def parse_data(self):
         """
@@ -371,31 +539,31 @@ class LeagueSettings(LeagueSettingsObject):
 
     def parse_acquisition_data(self):
         acquisition_data = self.read_data("acquisitionSettings", dict())
-        self.acquisition = LeagueFinanceSettings(data=acquisition_data)
+        self.acquisition = AcquisitionSettings(data=acquisition_data)
 
     def parse_finance_data(self):
         finance_data = self.read_data("financeSettings", dict())
-        self.finance = LeagueFinanceSettings(data=finance_data)
+        self.finance = FinanceSettings(data=finance_data)
 
     def parse_draft_data(self):
         draft_data = self.read_data("draftSettings", dict())
-        self.draft = LeagueDraftSettings(data=draft_data)
+        self.draft = DraftSettings(data=draft_data)
 
     def parse_roster_data(self):
         roster_data = self.read_data("rosterSettings", dict())
-        self.roster = LeagueRosterSettings(data=roster_data)
+        self.roster = RosterSettings(data=roster_data)
 
     def parse_schedule_data(self):
         schedule_data = self.read_data("scheduleSettings", dict())
-        self.schedule = LeagueScheduleSettings(data=schedule_data)
+        self.schedule = ScheduleSettings(data=schedule_data)
 
     def parse_scoring_data(self):
         scoring_data = self.read_data("scoringSettings", dict())
-        self.scoring = LeagueScoringSettings(data=scoring_data)
+        self.scoring = ScoringSettings(data=scoring_data)
 
     def parse_trade_data(self):
         trade_data = self.read_data("tradeSettings", dict())
-        self.trade = LeagueTradeSettings(data=trade_data)
+        self.trade = TradeSettings(data=trade_data)
 
     def parse_boolean_data(self):
         self.is_public = self.read_data("isPublic", False)

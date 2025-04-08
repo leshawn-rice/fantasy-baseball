@@ -152,7 +152,7 @@ CREATE TABLE settings_roster (
   is_using_undroppable_list BOOLEAN DEFAULT false
 );
 
-CREATE TABLE settings_roster_linup_slot_counts (
+CREATE TABLE settings_roster_lineup_slot_counts (
   id SERIAL PRIMARY KEY,
   settings_roster_id INTEGER REFERENCES settings_roster(id) ON DELETE CASCADE,
   position_id INTEGER REFERENCES positions(id) ON DELETE CASCADE,
@@ -214,5 +214,10 @@ CREATE TABLE settings (
   is_public BOOLEAN DEFAULT false,
   is_customizable BOOLEAN DEFAULT false,
   finance_id INTEGER REFERENCES settings_finance(id) ON DELETE CASCADE,
-  trade_id INTEGER REFERENCES settings_trade(id) ON DELETE CASCADE
+  trade_id INTEGER REFERENCES settings_trade(id) ON DELETE CASCADE,
+  scoring_id INTEGER REFERENCES settings_scoring(id) ON DELETE CASCADE,
+  schedule_id INTEGER REFERENCES settings_schedule(id) ON DELETE CASCADE,
+  roster_id INTEGER REFERENCES settings_roster(id) ON DELETE CASCADE,
+  draft_id INTEGER REFERENCES settings_draft(id) ON DELETE CASCADE,
+  acquisition_id INTEGER REFERENCES settings_acquisition(id) ON DELETE CASCADE
 );

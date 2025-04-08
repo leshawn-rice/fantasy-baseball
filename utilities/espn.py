@@ -25,9 +25,7 @@ def get_position(position: Union[str, int] = None):
             position = int(position)
         except Exception:
             return None
-    if Position(position) == Position.DEFAULT:
-        return None
-    return Position(position).shorthand
+    return Position(position)
 
 
 def get_stat(stat: Union[str, int] = None):
@@ -52,9 +50,7 @@ def get_stat(stat: Union[str, int] = None):
             stat = int(stat)
         except Exception:
             return None
-    if Stat(stat) == Stat.DEFAULT:
-        return None
-    return Stat(stat).shorthand
+    return Stat(stat)
 
 
 def convert_epoch_to_date(epoch: Union[str, int] = None):

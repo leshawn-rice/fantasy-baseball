@@ -3,7 +3,7 @@ from classes.database import DatabaseEngine
 
 
 class ESPNObject:
-    database_table: str = None
+    _database_table: str = None
 
     def serialize_for_db(self):
         db_serialized_object = {}
@@ -44,7 +44,7 @@ class ESPNObject:
         except Exception as exc:
             print(exc)
 
-    def write_to_database(self, engine: DatabaseEngine, table: str = None):
+    def write_to_database(self, engine: DatabaseEngine, table: str = None, ignore_children: bool = False):
         if engine is None:
             return None
 
@@ -75,7 +75,7 @@ class ESPNObject:
         # Insert this object's data into the database using the provided engine.
         # Here, we're assuming that 'engine' has an 'insert' method that takes
         # a table name and a dictionary of column data.
-        table = self.database_table if table is None else table
+        table = self._database_table if table is None else table
         if hasattr(engine, "insert") and table is not None:
             try:
                 engine.insert(table, data)
@@ -91,6 +91,8 @@ class ESPNObject:
         if not hasattr(self, "id"):
             self.id = self.read_database_id(engine, table, data)
 
+        if ignore_children is True:
+            return
         for item in items_to_write_to_db:
             item.write_to_database(engine)
 
@@ -191,7 +193,6 @@ class Position(ESPNEnum):
 
 
 class Stat(ESPNEnum):
-    # database_table = "stats"
     """
     Enumeration representing baseball statistics.
 

@@ -101,7 +101,7 @@ class DatabaseEngine(object):
         """
         if not values or not isinstance(values, dict):
             raise ValueError("Invalid Update values!")
-        if not row_id or not isinstance(row_id, int):
+        if row_id is None or not isinstance(row_id, int):
             raise ValueError("Invalid Row ID!")
         table = self.get_table(name=table_name)
         self.session.execute(update(table).where(
@@ -125,9 +125,15 @@ class DatabaseEngine(object):
         if not values or not isinstance(values, dict):
             raise ValueError("Invalid Insert values!")
         table = self.get_table(name=table_name)
+        row_value_id = values.get("id", None)
         row = self.session.query(table).filter_by(**values).first()
+        row_by_id = self.get_by_id(table_name, row_value_id)
+
         if row:
             row_id = row.id
+            self.update(table_name=table_name, row_id=row_id, values=values)
+        elif row_by_id:
+            row_id = row_by_id.id
             self.update(table_name=table_name, row_id=row_id, values=values)
         else:
             self.session.execute(insert(table).values(**values))
@@ -164,6 +170,8 @@ class DatabaseEngine(object):
         Returns:
             object: The record that matches the given ID, or None if not found.
         """
+        if row_id is None:
+            return None
         table = self.get_table(name=table_name)
         result = self.session.query(table).filter_by(id=row_id).first()
         return result
@@ -215,6 +223,6 @@ class DatabaseEngine(object):
                       value for col_name, value in filter_dict.items()]
 
         # Query the table filtering on all conditions. You can use *conditions to unpack the list.
-        result = self.session.query(table).filter(*conditions).one()
+        result = self.session.query(table).filter(*conditions).first()
 
         return result
