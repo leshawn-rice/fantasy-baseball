@@ -101,11 +101,12 @@ class DatabaseEngine(object):
         """
         if not values or not isinstance(values, dict):
             raise ValueError("Invalid Update values!")
-        if row_id is None or not isinstance(row_id, int):
+        if row_id is None or (not isinstance(row_id, int) and not isinstance(row_id, str)):
             raise ValueError("Invalid Row ID!")
         table = self.get_table(name=table_name)
         self.session.execute(update(table).where(
             table.id == row_id).values(**values))
+        self.session.commit()
 
     def insert(self, table_name: str = None, values: dict = None):
         """
