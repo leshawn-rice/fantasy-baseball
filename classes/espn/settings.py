@@ -4,13 +4,14 @@ from classes.espn.base import ESPNObject, Position, Stat
 
 
 class SettingsObject(ESPNObject):
+    default_read_value = None
+
     """
     Base class for league settings objects.
 
     This class provides common functionality for reading and parsing data from a dictionary.
     Subclasses should override :meth:`parse_data` to implement custom parsing logic.
     """
-    default_read_value = None
 
     def __init__(self, data: dict = None, parse_data: bool = True):
         """
@@ -24,66 +25,6 @@ class SettingsObject(ESPNObject):
         self._data = data
         if parse_data:
             self.parse_data()
-
-    def set_parent_id(self, engine, attribute: str = None):
-        if not hasattr(self, "_parent"):
-            print(
-                f"WARNING: {self.__class__.__name__} has no attribute '_parent'!")
-        if not hasattr(self, f"{attribute}"):
-            self.__dict__[attribute] = self._parent.read_database_id(
-                engine=engine,
-                table=self._parent._database_table,
-                data=self._parent.serialize_for_db()
-            )
-
-    def set_child_id(self, engine, attribute: str = None, child=None):
-        if child is None:
-            print(
-                f"WARNING: No child to read {attribute} for {self.__class__.__name__}")
-        if not hasattr(self, f"{attribute}"):
-            self.__dict__[attribute] = child.read_database_id(
-                engine=engine,
-                table=child._database_table,
-                data=child.serialize_for_db()
-            )
-
-    def read_data(self, key: str = None, default_val: Any = None):
-        """
-        Retrieve a value from the data dictionary using the specified key.
-
-        If the key is not found, returns the provided default value or the class's
-        :attr:`default_read_value` if no default is provided.
-
-        :param key: The key to look up in the data dictionary.
-        :type key: str, optional
-        :param default_val: The default value to return if the key is not found.
-        :type default_val: Any, optional
-        :return: The value from the data dictionary or a default value.
-        :rtype: Any
-        """
-        return_val = default_val if default_val is not None else self.default_read_value
-        if not key:
-            return return_val
-        return self._data.get(key, return_val)
-
-    def parse_data(self):
-        """
-        Parse the data dictionary.
-
-        This method should be overridden by subclasses to implement custom parsing logic.
-        """
-        pass
-
-    def __repr__(self):
-        """
-        Return a string representation of the object, excluding the 'data' attribute.
-
-        :return: A string representation of the instance.
-        :rtype: str
-        """
-        attrs = ", ".join(f"'{key}': {value!r}" for key,
-                          value in self.__dict__.items() if f"{key}".lower() != "data")
-        return f"'{self.__class__.__name__}': {{{attrs}}}"
 
 
 class SettingsObjectValue(SettingsObject):
@@ -498,23 +439,21 @@ class Settings(SettingsObject):
 
     def write_to_database(self, engine, table=None, ignore_children=False):
         # Not the cleanest way to do this but we can fix it later (famous last words)
-        #
         super().write_to_database(engine, table)
 
-        if not hasattr(self, "finance_id"):
-            self.set_child_id(engine, "finance_id", self.finance)
-        if not hasattr(self, "trade_id"):
-            self.set_child_id(engine, "trade_id", self.trade)
-        if not hasattr(self, "scoring_id"):
-            self.set_child_id(engine, "scoring_id", self.scoring)
-        if not hasattr(self, "schedule_id"):
-            self.set_child_id(engine, "schedule_id", self.schedule)
-        if not hasattr(self, "roster_id"):
-            self.set_child_id(engine, "roster_id", self.roster)
-        if not hasattr(self, "draft_id"):
-            self.set_child_id(engine, "draft_id", self.draft)
-        if not hasattr(self, "acquisition_id"):
-            self.set_child_id(engine, "acquisition_id", self.acquisition)
+        attribute_map: dict = {
+            "finance_id": self.finance,
+            "trade_id": self.trade,
+            "scoring_id": self.scoring,
+            "schedule_id": self.schedule,
+            "roster_id": self.roster,
+            "draft_id": self.draft,
+            "acquisition_id": self.acquisition,
+        }
+
+        for id_attr_name, attr_value in attribute_map.items():
+            if not hasattr(self, id_attr_name):
+                self.set_child_id(engine, id_attr_name, attr_value)
 
         super().write_to_database(engine, table, ignore_children=True)
 

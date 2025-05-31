@@ -1,5 +1,6 @@
 import requests
 import json
+from collections import defaultdict
 
 # TODO: Put this in a config
 VALID_VIEWS = [
@@ -17,6 +18,8 @@ VALID_VIEWS = [
     "kona_league_messageboard",
     "kona_playercard",
 ]
+
+MAX_API_LIMIT = 3500
 
 
 class FantasyBaseballAPI:
@@ -93,6 +96,47 @@ class FantasyBaseballAPI:
         data = self.send_request(
             endpoint="players", params=params, headers=headers)
         return data
+
+    def set_player_filters(self, filters: dict = defaultdict(dict), values: dict = defaultdict(dict)):
+        filters["players"] = {**filters["players"], **values}
+
+    def get_players(self, filters: dict = defaultdict(dict)):
+        params = {
+            "view": "kona_player_info"
+        }
+        limit = MAX_API_LIMIT
+        offset = 0
+        sort_perc_owned = {
+            "sortPriority": 2, "sortAsc": False
+        }
+        self.set_player_filters(
+            filters, {"limit": limit, "offset": offset, "sortPercOwned": sort_perc_owned})
+        headers = {"x-fantasy-filter": json.dumps(filters)}
+        data = self.send_request(params=params, headers=headers)
+        players = list()
+        while len(data.get("players", list())):
+            players += data.get("players", list())
+            offset = offset + limit
+            self.set_player_filters(filters, {"offset": offset})
+            headers = {"x-fantasy-filter": json.dumps(filters)}
+            data = self.send_request(params=params, headers=headers)
+        return players
+
+    def get_free_agent_players(self):
+        filters = {
+            "players": {
+                "filterStatus": {"value": ["FREEAGENT"]}
+            }
+        }
+        return self.get_players(filters=filters)
+
+    def get_players_on_team(self):
+        filters = {
+            "players": {
+                "filterStatus": {"value": ["ONTEAM"]}
+            }
+        }
+        return self.get_players(filters=filters)
 
     def get_player_info_by_id(self):
         params = {

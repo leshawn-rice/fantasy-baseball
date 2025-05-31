@@ -1,9 +1,70 @@
 from enum import Enum
+from typing import Any
 from classes.database import DatabaseEngine
 
 
 class ESPNObject:
     _database_table: str = None
+
+    def set_parent_id(self, engine, attribute: str = None):
+        if not hasattr(self, "_parent"):
+            print(
+                f"WARNING: {self.__class__.__name__} has no attribute '_parent'!")
+        if not hasattr(self, f"{attribute}"):
+            self.__dict__[attribute] = self._parent.read_database_id(
+                engine=engine,
+                table=self._parent._database_table,
+                data=self._parent.serialize_for_db()
+            )
+
+    def set_child_id(self, engine, attribute: str = None, child=None):
+        if child is None:
+            print(
+                f"WARNING: No child to read {attribute} for {self.__class__.__name__}")
+        if not hasattr(self, f"{attribute}"):
+            self.__dict__[attribute] = child.read_database_id(
+                engine=engine,
+                table=child._database_table,
+                data=child.serialize_for_db()
+            )
+
+    def read_data(self, key: str = None, default_val: Any = None):
+        """
+        Retrieve a value from the data dictionary using the specified key.
+
+        If the key is not found, returns the provided default value or the class's
+        :attr:`default_read_value` if no default is provided.
+
+        :param key: The key to look up in the data dictionary.
+        :type key: str, optional
+        :param default_val: The default value to return if the key is not found.
+        :type default_val: Any, optional
+        :return: The value from the data dictionary or a default value.
+        :rtype: Any
+        """
+        return_val = default_val if default_val is not None else self.default_read_value
+        if not key:
+            return return_val
+        return self._data.get(key, return_val)
+
+    def parse_data(self):
+        """
+        Parse the data dictionary.
+
+        This method should be overridden by subclasses to implement custom parsing logic.
+        """
+        pass
+
+    def __repr__(self):
+        """
+        Return a string representation of the object, excluding the 'data' attribute.
+
+        :return: A string representation of the instance.
+        :rtype: str
+        """
+        attrs = ", ".join(f"'{key}': {value!r}" for key,
+                          value in self.__dict__.items() if f"{key}".lower() != "data")
+        return f"'{self.__class__.__name__}': {{{attrs}}}"
 
     def serialize_for_db(self):
         db_serialized_object = {}
@@ -84,7 +145,8 @@ class ESPNObject:
                     f"{self.__class__.__name__} failed to insert into {table} with values {data}\n{exc}\n\n")
         else:
             if table is None:
-                print(f"Invalid Table {table}")
+                print(
+                    f"Cannot insert into invalid table {table} with values {data}")
             else:
                 print("Engine does not support an 'insert' operation")
 

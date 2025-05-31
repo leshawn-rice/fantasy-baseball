@@ -2,6 +2,7 @@ import os
 import datetime
 from classes.interface import FantasyBaseballInterface
 from dotenv import load_dotenv
+import json
 
 if __name__ == "__main__":
     load_dotenv()
@@ -20,5 +21,5 @@ if __name__ == "__main__":
         db_connection_string=db_connection_string
     )
 
-    interface.create_league()
+    # interface.create_league()
     interface.database.end_session()

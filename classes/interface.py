@@ -1,6 +1,6 @@
 from classes.database import DatabaseEngine
 from classes.api import FantasyBaseballAPI
-from classes.espn.league.league import League
+from classes.espn.league import League
 from classes.espn.base import Stat, Position
 from settings import PRO_TEAM_MAP, POSITION_MAP, UTIL_POSITIONS
 

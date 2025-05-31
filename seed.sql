@@ -39,7 +39,29 @@ CREATE TABLE divisions (
 
 CREATE TABLE teams (
   id INTEGER PRIMARY KEY,
-  name TEXT NOT NULL
+  name TEXT NOT NULL,
+  abbreviation TEXT NOT NULL,
+  division_id INTEGER REFERENCES divisions(id) ON DELETE CASCADE,
+  primary_owner_id UUID REFERENCES members(id) ON DELETE CASCADE,
+  is_active BOOLEAN DEFAULT false,
+  logo TEXT DEFAULT NULL,
+  logo_type TEXT DEFAULT NULL,
+  playoff_seed INTEGER DEFAULT 0,
+  playoff_clinch_type TEXT DEFAULT NULL,
+  points FLOAT DEFAULT 0.0,
+  points_adjusted FLOAT DEFAULT 0.0,
+  points_delta FLOAT DEFAULT 0.0,
+  current_projected_rank INTEGER DEFAULT 0,
+  draft_day_projected_rank INTEGER DEFAULT 0,
+  rank_calculated_final INTEGER DEFAULT 0,
+  rank_final INTEGER DEFAULT 0,
+  waiver_rank INTEGER DEFAULT 0
+);
+
+CREATE TABLE teams_owners (
+  id SERIAL PRIMARY KEY,
+  team_id INTEGER REFERENCES teams(id) ON DELETE CASCADE,
+  owner_id UUID REFERENCES members(id) ON DELETE CASCADE
 );
 
 /*
@@ -117,7 +139,7 @@ CREATE TABLE settings_draft (
 CREATE TABLE settings_draft_pick_order (
   id SERIAL PRIMARY KEY,
   settings_draft_id INTEGER REFERENCES settings_draft(id) ON DELETE CASCADE,
-  -- team_id INTEGER REFERENCES teams(id) ON DELETE CASCADE,
+  team_id INTEGER REFERENCES teams(id) ON DELETE CASCADE,
   position INTEGER NOT NULL
 );
 
